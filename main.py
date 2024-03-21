@@ -109,7 +109,7 @@ def Image_To_Table_OCR(file_path,file_size,file_name):
 
 
 @app.post("/table_OCR/")
-async def predict_api(file: UploadFile = File(...)):
+async def table_OCR_api(file: UploadFile = File(...)):
     extension = file.filename.split(".")[-1] in ("jpg", "jpeg", "png")
     if not extension:
         return "Image must be jpg or png format!"
