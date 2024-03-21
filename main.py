@@ -2,10 +2,12 @@ from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
 from typing import Optional
 import os
+import random
 
+from tempfile import NamedTemporaryFile
 # Library imports
 import cv2
-import paddle
+
 from img2table.ocr import PaddleOCR
 import numpy as np
 import pandas as pd
@@ -20,16 +22,16 @@ class ImageUpload(BaseModel):
     image: UploadFile
 
 # Preprocessing method
-def Preprocessing(image_path):
+def Preprocessing(file_path,file_size,file_name):
     # Resize the image to 100% of the original size
     resize_factor = 1
     # Check if the image file exists
-    if os.path.exists(image_path):
+    if os.path.exists(file_path):
         # Get the size of the image file in bytes
-        size_bytes = os.path.getsize(image_path)
+        size_bytes = file_size
 
         # Convert the size from bytes to megabytes
-        size_mb = size_bytes / (1024 * 1024)  # 1 MB = 1024 * 1024 bytes
+        size_mb = float((file_size / (1024*1024) )) # 1 MB = 1024 * 1024 bytes
 
         if size_mb >= 5:
             # Resize the image to 6% of the original size
@@ -53,8 +55,7 @@ def Preprocessing(image_path):
             # Resize the image to 20% of the original size
             resize_factor = 0.2
 
-        # Load the image
-        image = cv2.imread(image_path)
+        image = cv2.imread(file_path)
 
         # Get the original dimensions
         original_height, original_width = image.shape[:2]
@@ -65,26 +66,37 @@ def Preprocessing(image_path):
 
         # Resize the image
         resized_image = cv2.resize(image, (new_width, new_height))
-
+        random_int = random.randint(1, 100000)
+        image_path="D:/OCR/image/"+str(random_int)+file_name
+        
         # Save the resized image
         cv2.imwrite(image_path, resized_image)
 
+    
+        # Save the resized image
+    return image_path
+    
+    
+
 # Image_To_Table_OCR method
-def Image_To_Table_OCR(Image_array):
-    #Preprocessing(image_path)
+def Image_To_Table_OCR(file_path,file_size,file_name):
+    image_path=Preprocessing(file_path,file_size,file_name)
     # Convert image to Array
-    #Image_array = Image(image_path)
+    Image_array = Image(image_path)
+    
     # Define OCR
+    name,extenion =os.path.splitext(file_name)
     ocr = PaddleOCR(lang="en")
+    dest='D:/OCR/xlsl_file/'+name+'table.xlsx'
     # Convert Image Array to Excel file, in dest give the absolute path of excel file
-    Image_array.to_xlsx(dest='table.xlsx',
+    Image_array.to_xlsx(dest=dest,
                        ocr=ocr,
                        implicit_rows=False,
                        borderless_tables=False,
                        min_confidence=10)
 
     # Read excel file
-    excel_file_path = 'table.xlsx'
+    excel_file_path = dest
 
     # Convert excel into pandas dataframe
     dataframe = pd.read_excel(excel_file_path)
@@ -92,21 +104,24 @@ def Image_To_Table_OCR(Image_array):
     # Convert dataframe into JSON
     return dataframe.to_json(orient='records')
 
-def read_imagefile(file):
-    image = Image(file)
-    return image
 
 
 
-@app.post("/uploadfiles/")
+
+@app.post("/table_OCR/")
 async def predict_api(file: UploadFile = File(...)):
     extension = file.filename.split(".")[-1] in ("jpg", "jpeg", "png")
     if not extension:
         return "Image must be jpg or png format!"
-    image = read_imagefile(await file.read())
-    prediction = Image_To_Table_OCR(image)
-
-    return prediction
+    with NamedTemporaryFile(delete=False) as temp_image:
+        temp_image.write(await file.read())
+        temp_image_path = temp_image.name
+    
+    json_data = Image_To_Table_OCR(temp_image_path, file.size,file.filename)
+    os.unlink(temp_image_path)
+    
+    return json_data 
+     
 
 
 
