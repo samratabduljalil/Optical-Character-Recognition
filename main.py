@@ -102,8 +102,8 @@ def Image_To_Table_OCR(file_path,file_size,file_name):
     dataframe = pd.read_excel(excel_file_path)
 
     # Convert dataframe into JSON
-    jsone=dataframe.to_json(orient='records')
-    return  json.loads(jsone)
+    json_array=dataframe.to_json(orient='records')
+    return  json.loads(json_array)
 
 
 
