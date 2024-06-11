@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Optional
 import os
 import random
-
+import json
 from tempfile import NamedTemporaryFile
 # Library imports
 import cv2
@@ -67,7 +67,7 @@ def Preprocessing(file_path,file_size,file_name):
         # Resize the image
         resized_image = cv2.resize(image, (new_width, new_height))
         random_int = random.randint(1, 100000)
-        image_path="D:/OCR/image/"+str(random_int)+file_name
+        image_path="image/"+str(random_int)+file_name
         
         # Save the resized image
         cv2.imwrite(image_path, resized_image)
@@ -87,7 +87,7 @@ def Image_To_Table_OCR(file_path,file_size,file_name):
     # Define OCR
     name,extenion =os.path.splitext(file_name)
     ocr = PaddleOCR(lang="en")
-    dest='D:/OCR/xlsl_file/'+name+'table.xlsx'
+    dest='xlsl_file/'+name+'table.xlsx'
     # Convert Image Array to Excel file, in dest give the absolute path of excel file
     Image_array.to_xlsx(dest=dest,
                        ocr=ocr,
@@ -102,7 +102,8 @@ def Image_To_Table_OCR(file_path,file_size,file_name):
     dataframe = pd.read_excel(excel_file_path)
 
     # Convert dataframe into JSON
-    return dataframe.to_json(orient='records')
+    jsone=dataframe.to_json(orient='records')
+    return  json.loads(jsone)
 
 
 
@@ -119,7 +120,7 @@ async def table_OCR_api(file: UploadFile = File(...)):
     
     json_data = Image_To_Table_OCR(temp_image_path, file.size,file.filename)
     os.unlink(temp_image_path)
-    
+    print(json_data )
     return json_data 
      
 
