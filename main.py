@@ -14,7 +14,17 @@ import pandas as pd
 from img2table.document import Image
 from tempfile import NamedTemporaryFile
 from fastapi.responses import HTMLResponse
+#database start here
+from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.orm import Session
+from typing import List
+import  models, schemas
+from database import engine, get_db
 
+from sqlalchemy.orm import Session
+
+models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # Define request model
@@ -124,7 +134,10 @@ async def table_OCR_api(file: UploadFile = File(...)):
     return json_data 
      
 
-
+@app.get("/courses/", response_model=List[schemas.CourseBase])
+def read_courses(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+    courses = db.query(models.Course).offset(skip).limit(limit).all()
+    return courses
 
 
 
