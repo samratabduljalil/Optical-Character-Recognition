@@ -1,15 +1,14 @@
-from fastapi import FastAPI, File, UploadFile
+# Library imports
 from pydantic import BaseModel
 from typing import Optional
 import os
 import random
+from fastapi import FastAPI, File, UploadFile #CLR
+import numpy as np #CLR
 import json
 from tempfile import NamedTemporaryFile
-# Library imports
 import cv2
-
 from img2table.ocr import PaddleOCR
-import numpy as np
 import pandas as pd
 from img2table.document import Image
 from tempfile import NamedTemporaryFile
